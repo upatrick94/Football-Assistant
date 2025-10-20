@@ -112,6 +112,60 @@ def get_team_recent_matches(team_name, season=2023, last_n=5):
     except Exception as e:
         print(f"Error fetching matches for {team_name}: {e}")
         return None
+    
+def get_team_statistics(team_name, season=2023):
+    headers = {"x-apisports-key": FOOTBALL_API_KEY}
+    search_url = f"{base_url}/teams?search={team_name}"
+
+    try:
+        search_response = requests.get(search_url, headers=headers)
+        search_response.raise_for_status()
+        search_data = search_response.json()
+
+        if not search_data["response"]:
+            print(f"Error fetching team ID for {team_name}: {e}")
+            return None
+        
+        team_id = search_data["response"][0]["team"]["id"]
+        team_name = search_data["response"][0]["team"]["name"]
+    except Exception as e:
+        print(f"Error fetching team ID for {team_name}: {e}")
+        return None
+    
+    stats_url = f"{base_url}/teams/statistics?league=39&season={season}&team={team_id}"
+    try:
+        stats_response = requests.get(stats_url, headers=headers)
+        stats_response.raise_for_status()
+        stats_data = stats_response.json()
+
+        team_stats = stats_data.get("response", {})
+
+        if not team_stats:
+            print(f"No statistics found for {team_name} in season {season}.")
+            return None
+        
+        summary = {
+            "team": team_stats["team"]["name"],
+            "league": team_stats["league"]["name"],
+            "season": team_stats["league"]["season"],
+            "matches_played": team_stats["fixtures"]["played"]["total"],
+            "wins": team_stats["fixtures"]["wins"]["total"],
+            "draws": team_stats["fixtures"]["draws"]["total"],
+            "losses": team_stats["fixtures"]["loses"]["total"],
+            "goals_for": team_stats["goals"]["for"]["total"]["total"],
+            "goals_against": team_stats["goals"]["against"]["total"]["total"],
+            "clean_sheets": team_stats["clean_sheet"]["total"],
+            "failed_to_score": team_stats["failed_to_score"]["total"],
+            "biggest_win": team_stats["biggest"]["wins"].get("home", None),
+            "biggest_loss": team_stats["biggest"]["loses"].get("away", None),
+            "average_goals_for": team_stats["goals"]["for"]["average"]["total"],
+            "average_goals_against": team_stats["goals"]["against"]["average"]["total"]
+        }
+
+        return summary
+    except Exception as e:
+        print(f"Error fetching statistics for {team_name}: {e}")
+        return None
 
 
 
