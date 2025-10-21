@@ -168,4 +168,102 @@ def get_team_statistics(team_name, season=2023):
         return None
 
 
+def get_top_scorers(league_id=39, season=2023, limit=10):
+    headers = {"x-apisports-key": FOOTBALL_API_KEY}
+    url = f"{base_url}/players/topscorers?league={league_id}&season={season}"
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        scorers = data.get("response", [])
+        if not scorers:
+            print(f"No top scorer data found for league {league_id}, season {season}.")
+            return []
+        
+        top_players = []
+        for player_data in scorers[:limit]:
+            player = player_data["player"]
+            stats = player_data["statistics"][0]
+
+            top_players.append({
+                "rank": len(top_players) + 1,
+                "name": player["name"],
+                "team": stats["team"]["name"],
+                "goals": stats["goals"]["total"],
+                "assists": stats["goals"]["assists"],
+                "matches": stats["games"]["appearences"],
+                "position": player.get("position") or stats["games"].get("position", "N/A")
+            })
+
+        return top_players
+    except Exception as e:
+        print(f"Error fetching top scorers: {e}")
+        return []
+    
+def get_upcoming_fixtures(team_name, season=2023, limit=5):
+    headers = {"x-apisports-key": FOOTBALL_API_KEY}
+    search_url = f"{base_url}/teams?search={team_name}"
+
+    try:
+        search_response = requests.get(search_url, headers=headers)
+        search_response.raise_for_status()
+        search_data = search_response.json()
+
+        if not search_data["response"]:
+            print(f"Team '{team_name}' not found.")
+            return None
+        
+        team_id = search_data["response"][0]["team"]["id"]
+        team_name = search_data["response"][0]["team"]["name"]
+
+    except Exception as e:
+        print(f"Error fetching team ID for {team_name}: {e}")
+        return None
+    
+    fixtures_url = f"{base_url}/fixtures?league=39&season={season}&team={team_id}"
+    try:
+        fixtures_response = requests.get(fixtures_url, headers=headers)
+        fixtures_response.raise_for_status()
+        fixtures_data = fixtures_response.json()
+
+        fixtures = fixtures_data.get("response", [])
+        if not fixtures:
+            print(f"No upcoming fixtures found for {team_name}.")
+            return {"team": team_name, "fixtures": []}
+        
+        upcoming = [
+            f for f in fixtures
+            if f["fixture"]["status"]["short"] in ("NS", "TBD", "PST")
+            
+        ]
+
+        if not upcoming:
+            print(f"No upcoming fixtures found for {team_name}. Showing last matches instead.")
+            upcoming = sorted(fixtures, key=lambda f: f["fixture"]["date"], reverse=True)[:limit]
+        else:
+            upcoming = sorted(upcoming, key=lambda f: f["fixture"]["date"])[:limit]
+
+        clean_fixtures = []
+        for match in upcoming:
+            fixture = match["fixture"]
+            home = match["teams"]["home"]["name"]
+            away = match["teams"]["away"]["name"]
+            venue = fixture["venue"]["name"]
+            date = fixture["date"][:10]
+
+            clean_fixtures.append({
+                "date": date,
+                "home": home,
+                "away": away,
+                "venue": venue,
+                "status": "Home" if home == team_name else "Away"
+            })
+        
+        return {"team": team_name, "fixtures": clean_fixtures}
+    
+    except Exception as e:
+        print(f"Error fetching upcoming fixtures for {team_name}: {e}")
+        return None
 

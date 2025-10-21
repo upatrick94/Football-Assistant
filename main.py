@@ -1,7 +1,8 @@
-from tools.football_data import get_team_statistics
+from tools.agent import football_agent
 
-stats = get_team_statistics("Arsenal")
-if stats:
-    print("\n=== Team Statistics ===")
-    for k, v in stats.items():
-        print(f"{k}: {v}")
+while True:
+    user_input = input("\n⚽ Ask your Football Assistant: ")
+    if user_input.lower() in ["quit", "exit"]:
+        break
+    response = football_agent(user_input)
+    print("\n🤖", response)
