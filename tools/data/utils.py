@@ -12,6 +12,17 @@ LEAGUE_IDS = {
     "ligue 1": 61
 }
 
+TEAM_ALIASES = {
+    "bayern munich": "bayern",
+    "fc bayern münchen": "bayern",
+    "bayern münchen": "bayern",
+    "psg": "paris saint germain",
+    "inter milan": "inter",
+    "ac milan": "ac milan",
+    "man utd": "manchester united",
+    "manchester utd": "manchester united",
+}
+
 def get_league_id(league_name: str):
     name = league_name.lower().strip()
     for key,value in LEAGUE_IDS.items():
@@ -28,44 +39,63 @@ def make_request(endpoint: str, params: dict):
         print(f" API request failed ({endpoint}): {e}")
         return None
     
-def resolve_team_id(team_query: str, league_id: int | None = None, season: int | None = None):
-    data = make_request("teams", {"search": team_query})
-    if not data or not data.get("response"):
-        return None, None
-    
-    candidates = data["response"]
+def resolve_team_id(team_query: str, league_id=None, season=None):
+    import unicodedata
 
-    def is_womens(name: str):
-        n = name.lower()
-        return " women" in n or n.endswith(" w") or n.endswith(" w.") or n == "women"
-    
-    filtered = [t for t in candidates if not is_womens(t["team"]["name"])]
+    team_query = team_query.strip().lower()
+    team_query = TEAM_ALIASES.get(team_query, team_query)
+
+    team_ascii = unicodedata.normalize("NFD", team_query).encode("ascii", "ignore").decode("utf-8")
+
+    search_terms = list({team_query, team_ascii, team_query.replace("munich", "bayern")})
+
+    candidates = []
+    for term in search_terms:
+        resp = requests.get(
+            f"{base_url}/teams",
+            headers=headers,
+            params={"search": term},
+            timeout=15
+        )
+        if not resp.ok:
+            continue
+        data = resp.json()
+        if data.get("response"):
+            candidates.extend(data["response"])
+
+    if not candidates:
+        print(f"⚠️ No teams found for '{team_query}'. Tried: {search_terms}")
+        return None, None
+
+    seen = set()
+    filtered = []
+    for t in candidates:
+        name = t["team"]["name"]
+        if name.lower() in seen:
+            continue
+        seen.add(name.lower())
+
+        lower_name = name.lower()
+        if any(w in lower_name for w in ["women", " ladies", " w", "(w)", "wfc"]):
+            continue
+        filtered.append(t)
 
     if not filtered:
         filtered = candidates
 
-    q = team_query.lower().replace("munich", "münchen")
-    def score(t):
-        name = t["team"]["name"]
-        s = 0
-        if q == name: s+=100
-        if q in name: s+=50
-        if "fc " + q in name: s+=20
-        if " w" in name or "women" in name: s=-20
-        return s
-    
-    filtered.sort(key=score, reverse=True)
+    filtered.sort(key=lambda t: "bayern" in t["team"]["name"].lower(), reverse=True)
 
     if league_id and season:
-        best = None
         for t in filtered:
             tid = t["team"]["id"]
-            fx = make_request("fixtures", {"league": league_id, "season": season, "team": tid})
-            if fx and fx.get("response"):
-                best = t
-                break
+            check = requests.get(
+                f"{base_url}/fixtures",
+                headers=headers,
+                params={"league": league_id, "season": season, "team": tid},
+                timeout=15
+            ).json()
+            if check.get("response"):
+                return tid, t["team"]["name"]
 
-        if best:
-            return best["team"]["id"], best["team"]["name"]
-        
-    return filtered[0]["team"]["id"], filtered[0]["team"]["name"]
+    best = filtered[0]["team"]
+    return best["id"], best["name"]

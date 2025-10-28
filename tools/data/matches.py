@@ -24,19 +24,11 @@ def get_team_recent_matches(team_name, league_name="Premier League", season=2023
         goals_home = m["goals"]["home"]
         goals_away = m["goals"]["away"]
 
-        if team_name == home:
-            result = (
-                "Win" if goals_home > goals_away else
-                "Draw" if goals_home == goals_away else
-                "Loss"
-            )
+        if resolved_name == home:
+            result = "Win" if goals_home > goals_away else "Draw" if goals_home == goals_away else "Loss"
             opponent = away
         else:
-            result = (
-                "Win" if goals_home < goals_away else
-                "Draw" if goals_home == goals_away else
-                "Loss"
-            )
+            result = "Win" if goals_home < goals_away else "Draw" if goals_home == goals_away else "Loss"
             opponent = home
 
         clean.append({

@@ -1,14 +1,10 @@
-from tools.data.utils import get_league_id, make_request
+from tools.data.utils import get_league_id, make_request, resolve_team_id
 
 def get_team_statistics(team_name, league_name="Premier League", season=2023):
     league_id = get_league_id(league_name)
-
-    search = make_request("teams", {"search": team_name})
-    if not search or not search.get("response"):
-        print(f"Team '{team_name}' not found.")
-        return None
-    team_id = search["response"][0]["team"]["id"]
-    team_name = search["response"][0]["team"]["name"]
+    team_id, resolve_name = resolve_team_id(team_name, league_id, season)
+    if not team_id:
+        print(f"Team '{team_name} not found.'")
 
     stats_data = make_request("teams/statistics", {"league": league_id, "season": season, "team": team_id})
     if not stats_data or not stats_data.get("response"):

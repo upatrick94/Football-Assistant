@@ -8,20 +8,19 @@ def get_league_standings(league_name="Premier League", season=2023):
         print(f"No standings found for {league_name} {season}.")
         return None
     
-    standings = data["response"][0]["league"]["standings"][0]
-    table = [
-        {
-            "rank": t["rank"],
-            "team": t["team"]["name"],
-            "points": t["points"],
-            "played": t["all"]["played"],
-            "wins": t["all"]["win"],
-            "draws": t["all"]["draw"],
-            "losses": t["all"]["lose"],
-            "goals_for": t["all"]["goals"]["for"],
-            "goals_against": t["all"]["goals"]["against"],
-
-        }
-        for t in standings
-    ]
-    return table
+    table = data["response"][0]["league"]["standings"][0]
+    standings = []
+    for team in table:
+        standings.append({
+            "position": team["rank"],
+            "team": team["team"]["name"],
+            "played": team["all"]["played"],
+            "won": team["all"]["win"],
+            "drawn": team["all"]["draw"],
+            "lost": team["all"]["lose"],
+            "goals_for": team["all"]["goals"]["for"],
+            "goals_against": team["all"]["goals"]["against"],
+            "points": team["points"],
+            "form": team.get("form", "")
+        })
+    return standings
