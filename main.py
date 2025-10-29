@@ -1,35 +1,132 @@
-from tools.data.scorers import get_top_scorers
-from tools.data.matches import get_team_recent_matches
-from tools.data.fixtures import get_upcoming_fixtures
+import sys
+import threading
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout,
+    QLabel, QTextEdit, QPushButton, QProgressBar
+)
+from PyQt6.QtCore import Qt, QEvent
+from PyQt6.QtGui import QFont
 
-def print_scorers(league="Bundesliga", season=2023):
-    print(f"Top scorers in {league} {season}/{season+1}:")
-    data = get_top_scorers(league, season)
-    if not data:
-        print("No data.")
-        return
-    for i, s in enumerate(data, 1):
-        print(f"{i}. {s['player']} ({s['team']}) – {s['goals']} G, {s.get('assists') or 0} A")
+from tools.agent import FootballAgent
 
-def print_upcoming(team="Arsenal", league="Premier League", season=2023):
-    print(f"\n{team} upcoming fixtures ({league} {season}/{season+1}):")
-    data = get_upcoming_fixtures(team, league, season)
-    if not data:
-        print("No data.")
-        return
-    for f in data["fixtures"]:
-        print(f"{f['date']}: {f['home']} vs {f['away']} at {f['venue']} [{f['match_status']}]")
 
-def print_recent(team="Bayern Munich", league="Bundesliga", season=2023):
-    print(f"\n{team} recent matches ({league} {season}/{season+1}):")
-    data = get_team_recent_matches(team, league, season)
-    if not data:
-        print("No data.")
-        return
-    for m in data["matches"]:
-        print(f"{m['date']}: {m['home']} {m['score']} {m['away']}  ({m['result']})")
+class FootballAssistantGUI(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("⚽ Football Assistant Chat")
+        self.setGeometry(350, 150, 900, 700)
+
+        self.agent = FootballAgent()
+
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #0D1117;
+                color: #E6EDF3;
+            }
+            QLabel {
+                color: #E6EDF3;
+            }
+            QTextEdit {
+                background-color: #161B22;
+                color: #E6EDF3;
+                border: 1px solid #30363D;
+                border-radius: 10px;
+                padding: 10px;
+                font-size: 15px;
+            }
+            QPushButton {
+                background-color: #238636;
+                color: white;
+                border-radius: 8px;
+                padding: 10px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2EA043;
+            }
+            QProgressBar {
+                border: 1px solid #30363D;
+                border-radius: 6px;
+                text-align: center;
+                background-color: #161B22;
+            }
+        """)
+
+        main_widget = QWidget()
+        layout = QVBoxLayout(main_widget)
+        self.setCentralWidget(main_widget)
+
+        title = QLabel("💬 Football Assistant")
+        title.setFont(QFont("Segoe UI", 22, QFont.Weight.Bold))
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title)
+
+        self.chat_display = QTextEdit()
+        self.chat_display.setReadOnly(True)
+        layout.addWidget(self.chat_display, stretch=1)
+
+        self.loading_bar = QProgressBar()
+        self.loading_bar.setRange(0, 0)
+        self.loading_bar.hide()
+        layout.addWidget(self.loading_bar)
+
+        self.input_box = QTextEdit()
+        self.input_box.setPlaceholderText("Ask about matches, standings, players, or stats...")
+        self.input_box.setFixedHeight(80)
+        layout.addWidget(self.input_box)
+
+        send_button = QPushButton("Send")
+        send_button.clicked.connect(self.handle_user_input)
+        layout.addWidget(send_button)
+
+    def handle_user_input(self):
+        user_text = self.input_box.toPlainText().strip()
+        if not user_text:
+            return
+
+        self.chat_display.append(f"🧑‍💻 You: {user_text}")
+        self.input_box.clear()
+
+        self.loading_bar.show()
+
+        thread = threading.Thread(target=self.get_ai_response, args=(user_text,))
+        thread.start()
+
+    def get_ai_response(self, user_text):
+        """Runs in background thread."""
+        try:
+            ai_response = self.agent.ask(user_text)
+        except Exception as e:
+            ai_response = f"⚠️ Error: {e}"
+
+        def update_ui():
+            self.chat_display.append(f"🤖 Assistant: {ai_response}\n")
+            self.loading_bar.hide()
+
+        QApplication.instance().postEvent(self, _FunctionEvent(update_ui))
+
+    def customEvent(self, event):
+        if isinstance(event, _FunctionEvent):
+            event.execute()
+
+
+class _FunctionEvent(QEvent):
+    EVENT_TYPE = QEvent.Type(QEvent.registerEventType())
+
+    def __init__(self, func):
+        super().__init__(self.EVENT_TYPE)
+        self.func = func
+
+    def execute(self):
+        self.func()
+
+
+def main():
+    app = QApplication(sys.argv)
+    window = FootballAssistantGUI()
+    window.show()
+    sys.exit(app.exec())
+
 
 if __name__ == "__main__":
-    print_scorers("Bundesliga", 2023)
-    print_upcoming("Arsenal", "Premier League", 2023)
-    print_recent("Bayern Munich", "Bundesliga", 2023)
+    main()

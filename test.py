@@ -1,5 +1,5 @@
-from tools.data.utils import resolve_team_id, get_league_id
-league_id = get_league_id("Bundesliga")
-tid, name = resolve_team_id("Bayern Munich", league_id, 2023)
-print("Resolved:", tid, name)
-
+import google.generativeai as genai
+from config import GEMINI_API_KEY
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel("gemini-2.5-flash")
+print(model.generate_content("Test connection").text)
