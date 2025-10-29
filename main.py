@@ -93,7 +93,6 @@ class FootballAssistantGUI(QMainWindow):
         thread.start()
 
     def get_ai_response(self, user_text):
-        """Runs in background thread."""
         try:
             ai_response = self.agent.ask(user_text)
         except Exception as e:
