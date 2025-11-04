@@ -58,10 +58,10 @@ python3 main.py
 ### Example Questions
 
 You can ask things like:
-    -“Show me Premier League standings”
-    -“Who are the top scorers in Serie A?”   
-    -“How did Barcelona do in their last 5 games?”
-    -“When is Arsenal’s next match?”
+- “Show me Premier League standings”
+- “Who are the top scorers in Serie A?”   
+- “How did Barcelona do in their last 5 games?”
+- “When is Arsenal’s next match?”
 
 
 
