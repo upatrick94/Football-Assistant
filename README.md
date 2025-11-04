@@ -31,25 +31,25 @@
 
 ### Clone the repository
 
-git clone 
-git clone https://github.com/yourusername/football-assistant.git
-cd football-assistant
+- git clone 
+- git clone https://github.com/yourusername/football-assistant.git
+- cd football-assistant
 
 ### Create a virtual environment
 
-python -m venv venv
-source venv/bin/activate # (Windows: venv\Scripts\activate)
+- python -m venv venv
+- source venv/bin/activate # (Windows: venv\Scripts\activate)
 
 ### Install packages
 
-pip install -r requirements.txt
+- pip install -r requirements.txt
 
 ### Add your API keys
 
 Make a file named .env and put this inside:
 
-GEMINI_API_KEY=your_gemini_key
-FOOTBALL_API_KEY=your_football_api_key
+- GEMINI_API_KEY=your_gemini_key
+- FOOTBALL_API_KEY=your_football_api_key
 
 ### Run it
 
