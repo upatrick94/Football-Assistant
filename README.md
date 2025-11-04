@@ -25,3 +25,43 @@
 | **HTTP** | requests |
 | **Env Config** | python-dotenv |
 
+---
+
+## How to Run it
+
+### Clone the repository
+
+git clone 
+git clone https://github.com/yourusername/football-assistant.git
+cd football-assistant
+
+### Create a virtual environment
+
+python -m venv venv
+source venv/bin/activate # (Windows: venv\Scripts\activate)
+
+### Install packages
+
+pip install -r requirements.txt
+
+### Add your API keys
+
+Make a file named .env and put this inside:
+
+GEMINI_API_KEY=your_gemini_key
+FOOTBALL_API_KEY=your_football_api_key
+
+### Run it
+
+python3 main.py
+
+### Example Questions
+
+You can ask things like:
+    -“Show me Premier League standings”
+    -“Who are the top scorers in Serie A?”   
+    -“How did Barcelona do in their last 5 games?”
+    -“When is Arsenal’s next match?”
+
+
+
