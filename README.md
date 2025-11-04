@@ -53,7 +53,7 @@ Make a file named .env and put this inside:
 
 ### Run it
 
-python3 main.py
+- python3 main.py
 
 ### Example Questions
 
